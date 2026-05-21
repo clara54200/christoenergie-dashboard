@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Christo Energie — Dashboard Analytique</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F8F7F4; color: #1a1a1a; padding: 24px }
+.container { max-width: 1100px; margin: 0 auto }
+.header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 16px; border-bottom: 1px solid #e0ddd6; margin-bottom: 20px }
+.header-left h1 { font-size: 22px; font-weight: 500; color: #1a1a1a }
+.header-left p { font-size: 12px; color: #888780; margin-top: 3px }
+.badge { background: #EAF3DE; color: #27500A; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 6px }
+.sec-label { font-size: 11px; font-weight: 500; color: #888780; letter-spacing: .05em; padding: 3px 10px; background: #F1EFE8; border-radius: 6px; margin: 20px 0 12px; display: inline-block; text-transform: uppercase }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px }
+.kpi { background: #F1EFE8; border-radius: 8px; padding: 14px 16px }
+.kpi-label { font-size: 12px; color: #888780; margin-bottom: 5px }
+.kpi-val { font-size: 24px; font-weight: 500; color: #1a1a1a }
+.kpi-sub { font-size: 11px; color: #888780; margin-top: 3px }
+.kpi-sub.green { color: #3B6D11 }
+.kpi-sub.red { color: #A32D2D }
+.charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-bottom: 18px }
+.chart-card { background: #fff; border: 0.5px solid #D3D1C7; border-radius: 12px; padding: 16px 18px }
+.chart-title { font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 3px }
+.chart-sub { font-size: 11px; color: #888780; margin-bottom: 12px }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: 11px; color: #5F5E5A }
+.leg-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: middle }
+.insight { background: #EAF3DE; border-left: 3px solid #3B6D11; border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 12px; color: #3B6D11; margin-top: 12px; line-height: 1.6 }
+.insight.warning { background: #FCEBEB; border-left-color: #A32D2D; color: #A32D2D }
+.reco-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-bottom: 18px }
+.reco-card { background: #fff; border: 0.5px solid #D3D1C7; border-radius: 12px; padding: 18px 20px }
+.reco-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px }
+.reco-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0 }
+.reco-icon.env { background: #EAF3DE }
+.reco-icon.soc { background: #E6F1FB }
+.reco-icon.gov { background: #FAEEDA }
+.reco-icon.fin { background: #FCEBEB }
+.reco-title { font-size: 14px; font-weight: 500; color: #1a1a1a }
+.reco-pillar { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; margin-top: 2px; display: inline-block }
+.reco-pillar.env { background: #EAF3DE; color: #27500A }
+.reco-pillar.soc { background: #E6F1FB; color: #0C447C }
+.reco-pillar.gov { background: #FAEEDA; color: #633806 }
+.reco-pillar.fin { background: #FCEBEB; color: #A32D2D }
+.reco-body { font-size: 12px; color: #5F5E5A; line-height: 1.7; margin-bottom: 12px }
+.reco-impact { display: flex; align-items: center; gap: 8px; font-size: 11px }
+.impact-bar-wrap { flex: 1; background: #F1EFE8; border-radius: 4px; height: 6px; overflow: hidden }
+.impact-bar { height: 6px; border-radius: 4px }
+.impact-label { font-size: 11px; color: #888780; min-width: 60px; text-align: right }
+.priority { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; margin-top: 10px; display: inline-block }
+.priority.high { background: #FCEBEB; color: #A32D2D }
+.priority.med { background: #FAEEDA; color: #633806 }
+.priority.low { background: #EAF3DE; color: #27500A }
+.reco-intro { background: #fff; border: 0.5px solid #D3D1C7; border-radius: 12px; padding: 18px 20px; margin-bottom: 14px }
+.reco-intro-title { font-size: 16px; font-weight: 500; color: #1a1a1a; margin-bottom: 8px }
+.reco-intro-body { font-size: 13px; color: #5F5E5A; line-height: 1.7 }
+.reco-intro-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px }
+.reco-stat { text-align: center; padding: 10px; background: #F1EFE8; border-radius: 8px }
+.reco-stat-val { font-size: 20px; font-weight: 500; color: #27500A }
+.reco-stat-label { font-size: 11px; color: #888780; margin-top: 2px }
+.footer { text-align: center; font-size: 11px; color: #B4B2A9; margin-top: 24px; padding-top: 16px; border-top: 0.5px solid #D3D1C7 }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <div class="header-left">
+    <h1>Christo Energie — Dashboard Analytique</h1>
+    <p>Énergie solaire & poêles à pellets · Bretagne · 2022–2024</p>
+  </div>
+  <span class="badge">Portfolio Data Analyst — Clara Legay</span>
+</div>
+
+<div class="sec-label">Performance commerciale</div>
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-label">CA global 2024</div><div class="kpi-val">558 K€</div><div class="kpi-sub green">+8,9% vs 2023</div></div>
+  <div class="kpi"><div class="kpi-label">Nb chantiers 2024</div><div class="kpi-val">85</div><div class="kpi-sub green">+5 vs 2023</div></div>
+  <div class="kpi"><div class="kpi-label">Part publique</div><div class="kpi-val">90%</div><div class="kpi-sub">écoles, mairies, EHPAD</div></div>
+  <div class="kpi"><div class="kpi-label">Marge brute moy.</div><div class="kpi-val">27,4%</div><div class="kpi-sub">panneaux solaires</div></div>
+  <div class="kpi"><div class="kpi-label">Satisfaction client</div><div class="kpi-val">4,78/5</div><div class="kpi-sub">tous chantiers</div></div>
+</div>
+
+<div class="charts-row">
+  <div class="chart-card">
+    <div class="chart-title">Évolution du CA 2022–2024</div>
+    <div class="chart-sub">Panneaux solaires + poêles à pellets (k€)</div>
+    <div class="legend">
+      <span><span class="leg-dot" style="background:#27500A"></span>Panneaux solaires</span>
+      <span><span class="leg-dot" style="background:#97C459"></span>Poêles à pellets</span>
+    </div>
+    <div style="position:relative;height:200px"><canvas id="ca" role="img" aria-label="CA Christo Energie 2022-2024">CA croissant</canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Répartition Public / Particulier</div>
+    <div class="chart-sub">Part du CA par type de chantier</div>
+    <div class="legend">
+      <span><span class="leg-dot" style="background:#27500A"></span>Public 90%</span>
+      <span><span class="leg-dot" style="background:#B4B2A9"></span>Particulier 10%</span>
+    </div>
+    <div style="position:relative;height:200px"><canvas id="donut" role="img" aria-label="90% public 10% particulier">90% public</canvas></div>
+    <div class="insight">90% du CA provient de missions de service public — écoles, mairies, EHPAD. Un engagement territorial concret intégré à la stratégie RSE.</div>
+  </div>
+</div>
+
+<div class="sec-label">Impact RSE & environnemental</div>
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-label">CO2 évité 2024</div><div class="kpi-val">289 t</div><div class="kpi-sub green">+8% vs 2023</div></div>
+  <div class="kpi"><div class="kpi-label">Puissance installée</div><div class="kpi-val">2 224 kWc</div><div class="kpi-sub">cumul 2024</div></div>
+  <div class="kpi"><div class="kpi-label">Foyers alimentés</div><div class="kpi-val">~544</div><div class="kpi-sub">équiv. énergie/an</div></div>
+  <div class="kpi"><div class="kpi-label">Atteinte objectif CO2</div><div class="kpi-val">96%</div><div class="kpi-sub">objectif relevé +15%</div></div>
+  <div class="kpi"><div class="kpi-label">Score RSE global</div><div class="kpi-val">87/100</div><div class="kpi-sub green">en progression</div></div>
+</div>
+
+<div class="charts-row">
+  <div class="chart-card">
+    <div class="chart-title">CO2 évité vs objectif annuel</div>
+    <div class="chart-sub">En tonnes — Christo Energie dépasse ses objectifs</div>
+    <div class="legend">
+      <span><span class="leg-dot" style="background:#27500A"></span>CO2 évité réel</span>
+      <span><span class="leg-dot" style="background:#B4B2A9"></span>Objectif CO2</span>
+    </div>
+    <div style="position:relative;height:200px"><canvas id="co2" role="img" aria-label="CO2 évité vs objectif">Dépasse objectif 2022 et 2023</canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">CA × CO2 évité — corrélation RSE</div>
+    <div class="chart-sub">Croissance financière et impact environnemental progressent ensemble</div>
+    <div class="legend">
+      <span><span class="leg-dot" style="background:#97C459;border-radius:50%"></span>2022</span>
+      <span><span class="leg-dot" style="background:#3B6D11;border-radius:50%"></span>2023</span>
+      <span><span class="leg-dot" style="background:#27500A;border-radius:50%"></span>2024</span>
+    </div>
+    <div style="position:relative;height:200px"><canvas id="scatter" role="img" aria-label="Scatter CA vs CO2">Corrélation positive</canvas></div>
+    <div class="insight">Chaque année : CA et CO2 évité progressent simultanément. Performance financière et RSE sont complémentaires chez Christo Energie.</div>
+  </div>
+</div>
+
+<div class="sec-label">Analyse financière</div>
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-label">CA net 2024</div><div class="kpi-val">417 K€</div><div class="kpi-sub green">+2% vs 2023</div></div>
+  <div class="kpi"><div class="kpi-label">Résultat exploitation</div><div class="kpi-val">20,9 K€</div><div class="kpi-sub red">-64% vs 2023 </div></div>
+  <div class="kpi"><div class="kpi-label">Trésorerie</div><div class="kpi-val">108 K€</div><div class="kpi-sub green">+54% vs 2023</div></div>
+  <div class="kpi"><div class="kpi-label">Marge nette</div><div class="kpi-val">4,6%</div><div class="kpi-sub red">vs 12,9% en 2023</div></div>
+  <div class="kpi"><div class="kpi-label">Autonomie financière</div><div class="kpi-val">59%</div><div class="kpi-sub">capitaux propres / total</div></div>
+</div>
+
+<div class="charts-row">
+  <div class="chart-card">
+    <div class="chart-title">CA, résultat & bénéfice net</div>
+    <div class="chart-sub">Évolution 2022–2024 (k€)</div>
+    <div class="legend">
+      <span><span class="leg-dot" style="background:#185FA5"></span>CA net</span>
+      <span><span class="leg-dot" style="background:#3B6D11"></span>Résultat exploitation</span>
+      <span><span class="leg-dot" style="background:#97C459"></span>Bénéfice net</span>
+    </div>
+    <div style="position:relative;height:200px"><canvas id="finance" role="img" aria-label="CA résultat bénéfice 2022-2024">CA stable, résultat en baisse 2024</canvas></div>
+    <div class="insight warning">Le CA progresse (+2%) mais le résultat chute (-64%) en 2024 — hausse des charges salariales (+22%) à surveiller.</div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Répartition des charges 2024</div>
+    <div class="chart-sub">Structure des coûts d'exploitation</div>
+    <div class="legend">
+      <span><span class="leg-dot" style="background:#185FA5"></span>Achats matières 54%</span>
+      <span><span class="leg-dot" style="background:#3B6D11"></span>Salaires 20%</span>
+      <span><span class="leg-dot" style="background:#97C459"></span>Autres achats 24%</span>
+      <span><span class="leg-dot" style="background:#B4B2A9"></span>Autres 2%</span>
+    </div>
+    <div style="position:relative;height:200px"><canvas id="charges" role="img" aria-label="Répartition charges 2024">Achats 54%, Salaires 20%</canvas></div>
+  </div>
+</div>
+
+<!-- SECTION RECOMMANDATIONS RSE -->
+<div class="sec-label">Recommandations stratégiques RSE</div>
+
+<div class="reco-intro">
+  <div class="reco-intro-title">Synthèse de l'analyse — Ce que les données nous disent</div>
+  <div class="reco-intro-body">
+    Christo Energie est en bonne santé commerciale : le CA progresse chaque année et les chantiers sont de plus en plus nombreux. Sur le plan environnemental, l'entreprise évite chaque année davantage de CO2 grâce à ses installations solaires, ce qui montre que croître et avoir un impact positif sur la planète peuvent aller de pair. Un point d'attention cependant : en 2024, les bénéfices ont fortement baissé malgré un CA stable, principalement à cause d'une hausse des charges. Les recommandations ci-dessous proposent des actions concrètes pour continuer à grandir tout en renforçant l'engagement RSE de l'entreprise.
+  </div>
+  <div class="reco-intro-stats">
+    <div class="reco-stat"><div class="reco-stat-val">4</div><div class="reco-stat-label">recommandations RSE</div></div>
+    <div class="reco-stat"><div class="reco-stat-val">+340 t</div><div class="reco-stat-label">CO2 potentiel 2025</div></div>
+    <div class="reco-stat"><div class="reco-stat-val">ODD 7, 11, 13</div><div class="reco-stat-label">objectifs alignés</div></div>
+  </div>
+</div>
+
+<div class="reco-grid">
+
+  <div class="reco-card">
+    <div class="reco-header">
+      <div class="reco-icon env"></div>
+      <div>
+        <div class="reco-title">Viser 100% d'énergie renouvelable sur les chantiers</div>
+        <span class="reco-pillar env">Environnement — ODD 7</span>
+      </div>
+    </div>
+    <div class="reco-body">
+      Les véhicules de chantier et l'outillage consomment encore de l'énergie fossile. Passer progressivement à des véhicules électriques et s'approvisionner en électricité verte permettrait de réduire l'empreinte carbone opérationnelle d'environ 30 t CO2 par an, tout en renforçant la cohérence entre l'activité de l'entreprise et ses engagements environnementaux.
+    </div>
+    <div class="reco-impact">
+      <span style="font-size:11px;color:#888780;min-width:80px">Impact CO2</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:75%;background:#27500A"></div></div>
+      <span class="impact-label">Élevé</span>
+    </div>
+    <div class="reco-impact" style="margin-top:6px">
+      <span style="font-size:11px;color:#888780;min-width:80px">Faisabilité</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:65%;background:#3B6D11"></div></div>
+      <span class="impact-label">Bonne</span>
+    </div>
+    <div><span class="priority high">Priorité haute</span></div>
+  </div>
+
+  <div class="reco-card">
+    <div class="reco-header">
+      <div class="reco-icon env"></div>
+      <div>
+        <div class="reco-title">Mettre en place un suivi des déchets de chantier</div>
+        <span class="reco-pillar env">Environnement — ODD 12</span>
+      </div>
+    </div>
+    <div class="reco-body">
+      Les chantiers génèrent des emballages, des câbles et des équipements usagés qui ne sont pas encore suivis. Mettre en place un suivi simple, avec le poids de déchets par chantier et le taux de recyclage, permettrait de mieux piloter cet impact et de le valoriser auprès des clients publics dans les appels d'offres.
+    </div>
+    <div class="reco-impact">
+      <span style="font-size:11px;color:#888780;min-width:80px">Impact CO2</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:40%;background:#27500A"></div></div>
+      <span class="impact-label">Modéré</span>
+    </div>
+    <div class="reco-impact" style="margin-top:6px">
+      <span style="font-size:11px;color:#888780;min-width:80px">Faisabilité</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:90%;background:#3B6D11"></div></div>
+      <span class="impact-label">Très bonne</span>
+    </div>
+    <div><span class="priority med">Priorité moyenne</span></div>
+  </div>
+
+  <div class="reco-card">
+    <div class="reco-header">
+      <div class="reco-icon soc"></div>
+      <div>
+        <div class="reco-title">Développer un programme de formation continue</div>
+        <span class="reco-pillar soc">Social — ODD 8</span>
+      </div>
+    </div>
+    <div class="reco-body">
+      Les charges salariales ont augmenté de 22% en 2024, signe d'une équipe en pleine croissance. C'est le bon moment pour structurer un plan de formation aux nouvelles technologies solaires comme les batteries et l'autoconsommation collective. Cela renforcerait les compétences des techniciens, améliorerait la compétitivité sur les appels d'offres et ancrerait la dimension sociale de la démarche RSE.
+    </div>
+    <div class="reco-impact">
+      <span style="font-size:11px;color:#888780;min-width:80px">Impact social</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:85%;background:#185FA5"></div></div>
+      <span class="impact-label">Élevé</span>
+    </div>
+    <div class="reco-impact" style="margin-top:6px">
+      <span style="font-size:11px;color:#888780;min-width:80px">Faisabilité</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:70%;background:#185FA5"></div></div>
+      <span class="impact-label">Bonne</span>
+    </div>
+    <div><span class="priority high">Priorité haute</span></div>
+  </div>
+
+  <div class="reco-card">
+    <div class="reco-header">
+      <div class="reco-icon env"></div>
+      <div>
+        <div class="reco-title">Intégrer un rapport d'impact annuel clients publics</div>
+        <span class="reco-pillar env">Environnement — ODD 13</span>
+      </div>
+    </div>
+    <div class="reco-body">
+      Les écoles et mairies ne savent pas combien de CO2 leurs panneaux ont évité depuis l'installation. Envoyer chaque année un rapport personnalisé avec les kWh produits, le CO2 évité et l'équivalent en arbres plantés renforcerait la relation client, se démarquerait dans les appels d'offres et donnerait aux collectivités un outil concret pour communiquer sur leur engagement environnemental.
+    </div>
+    <div class="reco-impact">
+      <span style="font-size:11px;color:#888780;min-width:80px">Impact image</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:95%;background:#27500A"></div></div>
+      <span class="impact-label">Très élevé</span>
+    </div>
+    <div class="reco-impact" style="margin-top:6px">
+      <span style="font-size:11px;color:#888780;min-width:80px">Faisabilité</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:95%;background:#3B6D11"></div></div>
+      <span class="impact-label">Très bonne</span>
+    </div>
+    <div><span class="priority low">Quick win</span></div>
+  </div>
+
+  <div class="reco-card">
+    <div class="reco-header">
+      <div class="reco-icon gov"></div>
+      <div>
+        <div class="reco-title">Construire un tableau de bord RSE trimestriel</div>
+        <span class="reco-pillar gov">Gouvernance — ODD 17</span>
+      </div>
+    </div>
+    <div class="reco-body">
+      Les indicateurs RSE sont aujourd'hui calculés une fois par an. Passer à un suivi trimestriel du CO2 évité, de la puissance installée, de la satisfaction client et du taux de recyclage permettrait de détecter les écarts en cours d'année et d'agir avant le bilan annuel. Ce tableau de bord serait aussi un vrai outil de pilotage pour la direction et un gage de transparence envers les clients publics.
+    </div>
+    <div class="reco-impact">
+      <span style="font-size:11px;color:#888780;min-width:80px">Impact pilotage</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:88%;background:#854F0B"></div></div>
+      <span class="impact-label">Élevé</span>
+    </div>
+    <div class="reco-impact" style="margin-top:6px">
+      <span style="font-size:11px;color:#888780;min-width:80px">Faisabilité</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:80%;background:#854F0B"></div></div>
+      <span class="impact-label">Bonne</span>
+    </div>
+    <div><span class="priority med">Priorité moyenne</span></div>
+  </div>
+
+  <div class="reco-card">
+    <div class="reco-header">
+      <div class="reco-icon fin"></div>
+      <div>
+        <div class="reco-title">Optimiser la marge via les appels d'offres verts</div>
+        <span class="reco-pillar fin">Finance responsable</span>
+      </div>
+    </div>
+    <div class="reco-body">
+      La marge nette est passée à 4,6% en 2024. Les marchés publics intégrant des critères environnementaux permettent souvent de proposer des prix plus élevés car la qualité prime sur le coût. En intégrant systématiquement ses indicateurs CO2 dans les dossiers d'appels d'offres, Christo Energie peut améliorer sa rentabilité tout en restant fidèle à sa mission RSE.
+    </div>
+    <div class="reco-impact">
+      <span style="font-size:11px;color:#888780;min-width:80px">Impact marge</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:80%;background:#A32D2D"></div></div>
+      <span class="impact-label">Élevé</span>
+    </div>
+    <div class="reco-impact" style="margin-top:6px">
+      <span style="font-size:11px;color:#888780;min-width:80px">Faisabilité</span>
+      <div class="impact-bar-wrap"><div class="impact-bar" style="width:70%;background:#A32D2D"></div></div>
+      <span class="impact-label">Bonne</span>
+    </div>
+    <div><span class="priority high">Priorité haute</span></div>
+  </div>
+
+</div>
+
+<div class="footer">Dashboard réalisé par Clara Legay — Data Analyst · Power BI · SQL · RSE · claralegaydataanalyst.my.canva.site analytique</div>
+
+</div>
+
+<script>
+const g = '#27500A', gl = '#97C459', gm = '#3B6D11', gr = '#B4B2A9', bl = '#185FA5';
+const opts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+
+new Chart(document.getElementById('ca'), {
+  type: 'bar',
+  data: { labels: ['2022','2023','2024'], datasets: [
+    { label: 'Panneaux', data: [392,431,465], backgroundColor: g, borderRadius: 4 },
+    { label: 'Poêles', data: [73,82,94], backgroundColor: gl, borderRadius: 4 }
+  ]},
+  options: { ...opts, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, ticks: { callback: v => v+'k' } } } }
+});
+
+new Chart(document.getElementById('donut'), {
+  type: 'doughnut',
+  data: { labels: ['Public','Particulier'], datasets: [{ data: [90,10], backgroundColor: [g,gr], borderWidth: 0 }] },
+  options: { ...opts, cutout: '65%' }
+});
+
+new Chart(document.getElementById('co2'), {
+  type: 'bar',
+  data: { labels: ['2022','2023','2024'], datasets: [
+    { label: 'CO2 réel', data: [249,267,289], backgroundColor: g, borderRadius: 4 },
+    { label: 'Objectif', data: [200,260,300], backgroundColor: gr, borderRadius: 4 }
+  ]},
+  options: { ...opts, scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => v+'t' } } } }
+});
+
+new Chart(document.getElementById('scatter'), {
+  type: 'bubble',
+  data: { datasets: [
+    { label: '2022', data: [{ x: 465, y: 249, r: 8 }], backgroundColor: gl },
+    { label: '2023', data: [{ x: 513, y: 267, r: 10 }], backgroundColor: gm },
+    { label: '2024', data: [{ x: 559, y: 289, r: 12 }], backgroundColor: g }
+  ]},
+  options: { ...opts, scales: {
+    x: { min: 420, max: 600, title: { display: true, text: 'CA (k€)', font: { size: 11 } } },
+    y: { min: 220, max: 320, title: { display: true, text: 'CO2 évité (t)', font: { size: 11 } } }
+  }}
+});
+
+new Chart(document.getElementById('finance'), {
+  type: 'line',
+  data: { labels: ['2022','2023','2024'], datasets: [
+    { label: 'CA net', data: [346,408,417], borderColor: bl, backgroundColor: 'transparent', tension: 0.3, pointRadius: 5, borderDash: [] },
+    { label: 'Résultat', data: [45.8,57.4,20.9], borderColor: gm, backgroundColor: 'transparent', tension: 0.3, pointRadius: 5, borderDash: [5,3] },
+    { label: 'Bénéfice', data: [39,52.8,19.1], borderColor: gl, backgroundColor: 'transparent', tension: 0.3, pointRadius: 5, borderDash: [2,2] }
+  ]},
+  options: { ...opts, scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => v+'k' } } } }
+});
+
+new Chart(document.getElementById('charges'), {
+  type: 'doughnut',
+  data: { labels: ['Achats matières','Salaires & charges','Autres achats','Autres'], datasets: [{ data: [54,20,24,2], backgroundColor: [bl,gm,gl,gr], borderWidth: 0 }] },
+  options: { ...opts, cutout: '60%' }
+});
+</script>
+</body>
+</html>
